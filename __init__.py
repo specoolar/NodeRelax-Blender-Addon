@@ -18,6 +18,7 @@ bl_info = {
     "blender" : (2, 92, 0),
     "version" : (1, 0, 0),
     "location" : "Node Editor > Properties > Node Relax. Shortcut: Shift R",
+    "category": "Node",
 }
 
 import bpy
