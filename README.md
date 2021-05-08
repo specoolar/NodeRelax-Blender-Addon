@@ -10,6 +10,7 @@ https://youtu.be/QvNz3ON6e1I
 Controls:
 - Shift + R: invoke relax brush
 - Left click: smooth nodes
+- hold Shift: move nodes individually
 - Right click or Escape key: finish
 - "[" to decrease brush size, "]" to increase it
 
