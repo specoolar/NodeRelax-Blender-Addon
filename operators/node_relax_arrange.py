@@ -4,6 +4,39 @@ import mathutils
 from .utils import arrange_relax, global_loc, calc_collision_y, calc_node
 
 
+def step(step_num, iter_num, nodes, props, root_center, iter_func):
+    iter_cnt = 0
+    for i in range(iter_num):
+        new_center = mathutils.Vector((0, 0))
+        node_cnt = 0
+        changed = False
+        for node in nodes:
+            if node.type == 'FRAME':
+                continue
+            if props.ArrangeOnlySelected and not node.select:
+                continue
+            t = i / iter_num
+            if iter_func(node, t):
+                changed = True
+            new_center += global_loc(node)
+            node_cnt += 1
+
+        if not changed and props.AdaptiveIters:
+            break
+        if not props.ArrangeOnlySelected:
+            new_center /= node_cnt
+            slide = root_center - new_center  # Keep Center
+            for node in nodes:
+                if node.type == 'FRAME':
+                    continue
+                node.location += slide
+        iter_cnt += 1
+        if iter_cnt > props.BackgroundIterations:
+            iter_cnt = 0
+            props.ArrangeState = str(i) + "/" + str(iter_num) + " " + str(step_num) + "/4"
+            yield 1
+
+
 class NodeRelaxArrange(bpy.types.Operator):
     """Arrange Nodes"""
     bl_idname = "node_relax.arrange"
@@ -24,10 +57,9 @@ class NodeRelaxArrange(bpy.types.Operator):
         yield 1
         nodes = self.tree.nodes
         props = context.scene.NodeRelax_props
-        slide = mathutils.Vector((0, 0))
+        root_center = mathutils.Vector((0, 0))  # Original Center
 
         if not props.ArrangeOnlySelected:
-            root_center = mathutils.Vector((0, 0))  # Original Center
             node_cnt = 0
             for node in nodes:
                 if node.type == 'FRAME':
@@ -36,134 +68,20 @@ class NodeRelaxArrange(bpy.types.Operator):
                 node_cnt += 1
             root_center /= node_cnt
 
-        iter_cnt = 0
-        b_iters = props.BackgroundIterations
+        yield from step(1, props.Iterations_S1, nodes, props, root_center,
+                        lambda curr_node, e: arrange_relax(curr_node, 1, 1, props.Distance, False))
 
-        ########################################################################
-        for i in range(props.Iterations_S1):
-            new_center = mathutils.Vector((0, 0))
-            node_cnt = 0
-            changed = False
-            for node in nodes:
-                if node.type == 'FRAME':
-                    continue
-                if props.ArrangeOnlySelected and not node.select:
-                    continue
-                if arrange_relax(node, nodes, 1, 1, props.Distance, False):
-                    changed = True
-                new_center += global_loc(node)
-                node_cnt += 1
+        yield from step(2, props.Iterations_S2, nodes, props, root_center,
+                        lambda curr_node, e: arrange_relax(curr_node, 1, 1, props.Distance, True))
 
-            if not changed and props.AdaptiveIters:
-                break
-            if not props.ArrangeOnlySelected:
-                new_center /= node_cnt
-                slide = root_center - new_center  # Keep Center
-                for node in nodes:
-                    if node.type == 'FRAME':
-                        continue
-                    node.location += slide
-            iter_cnt += 1
-            if iter_cnt > b_iters:
-                iter_cnt = 0
-                props.ArrangeState = str(i) + "/" + str(props.Iterations_S1) + " 1/4"
-                yield 1
-
-        ########################################################################
-        for i in range(props.Iterations_S2):
-            new_center = mathutils.Vector((0, 0))
-            node_cnt = 0
-            changed = False
-            for node in nodes:
-                if node.type == 'FRAME':
-                    continue
-                if props.ArrangeOnlySelected and not node.select:
-                    continue
-                if arrange_relax(node, nodes, 1, 1, props.Distance, True):
-                    changed = True
-                new_center += global_loc(node)
-                node_cnt += 1
-
-            if not changed and props.AdaptiveIters:
-                break
-            if not props.ArrangeOnlySelected:
-                new_center /= node_cnt
-                slide = root_center - new_center  # Keep Center
-                for node in nodes:
-                    if node.type == 'FRAME':
-                        continue
-                    node.location += slide
-            iter_cnt += 1
-            if iter_cnt > b_iters:
-                iter_cnt = 0
-                props.ArrangeState = str(i) + "/" + str(props.Iterations_S2) + " 2/4"
-                yield 1
-
-        ########################################################################
         dist = mathutils.Vector((0, props.Distance))
-        for i in range(props.Iterations_S3):
-            new_center = mathutils.Vector((0, 0))
-            node_cnt = 0
-            changed = False
-            for node in nodes:
-                if node.type == 'FRAME':
-                    continue
-                if props.ArrangeOnlySelected and not node.select:
-                    continue
-                t = i / props.Iterations_S4  # Growing power
-                if calc_collision_y(node, nodes, t, dist):
-                    changed = True
-                new_center += global_loc(node)
-                node_cnt += 1
+        yield from step(3, props.Iterations_S3, nodes, props, root_center,
+                        lambda curr_node, e: calc_collision_y(curr_node, nodes, e, dist))
 
-            if not changed and props.AdaptiveIters:
-                break
-            if not props.ArrangeOnlySelected:
-                new_center /= node_cnt
-                slide = root_center - new_center  # Keep Center
-                for node in nodes:
-                    if node.type == 'FRAME':
-                        continue
-                    node.location += slide
-            iter_cnt += 1
-            if iter_cnt > b_iters:
-                iter_cnt = 0
-                props.ArrangeState = str(i) + "/" + str(props.Iterations_S3) + " 3/4"
-                yield 1
-
-        ########################################################################
         dist = mathutils.Vector((props.Distance, props.Distance))
         zero_vec = mathutils.Vector((0, 0))
-        for i in range(props.Iterations_S4):
-            new_center = mathutils.Vector((0, 0))
-            node_cnt = 0
-            changed = False
-            for node in nodes:
-                if node.type == 'FRAME':
-                    continue
-                if props.ArrangeOnlySelected and not node.select:
-                    continue
-                t = i / props.Iterations_S3  # Growing power
-                if calc_node(node, nodes, min(1, t * 2), zero_vec, 0.2, 1, dist, True):
-                    changed = True
-                new_center += global_loc(node)
-                node_cnt += 1
-
-            if not changed and props.AdaptiveIters:
-                break
-            if not props.ArrangeOnlySelected:
-                new_center /= node_cnt
-                slide = root_center - new_center  # Keep Center
-                for node in nodes:
-                    if node.type == 'FRAME':
-                        continue
-                    node.location += slide
-            iter_cnt += 1
-            if iter_cnt > b_iters:
-                iter_cnt = 0
-                props.ArrangeState = str(i) + "/" + str(props.Iterations_S4) + " 4/4"
-                yield 1
-        ########################################################################
+        yield from step(4, props.Iterations_S4, nodes, props, root_center,
+                        lambda curr_node, e: calc_node(curr_node, nodes, min(1, e * 2), zero_vec, 0.2, 1, dist, True))
 
         yield 0
 
