@@ -6,6 +6,8 @@ Shortcut: Shift+R
 Watch the video for demo:
 https://youtu.be/QvNz3ON6e1I
 
+Code refactored by [Spencer Magnusson](https://github.com/semagnum)
+
 ## How to use the brush
 Controls:
 - Shift + R: invoke relax brush
