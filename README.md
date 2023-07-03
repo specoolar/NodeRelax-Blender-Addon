@@ -16,5 +16,7 @@ Controls:
 - Right click or Escape key: finish
 - `[` to decrease brush size, `]` to increase it
 
+<img src="https://github.com/hannesdelbeke/NodeRelax-Blender-Addon/assets/3758308/c3a22fa5-cd30-40dc-ac5b-024b7efafa51" height="400" />
+
 ### aknowledgements
 - Code refactored by [Spencer Magnusson](https://github.com/semagnum)
