@@ -39,7 +39,8 @@ class NodeRelaxBrush(bpy.types.Operator):
 
     bl_options = {"UNDO", "REGISTER"}
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs) 
         self.radius = 100
         self.lmb = False
         self.delta = mathutils.Vector((0, 0))
