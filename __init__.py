@@ -20,8 +20,8 @@ bl_info = {
     "name": "Node Relax",
     "author": "Shahzod Boyhonov (Specoolar)",
     "description": "Tool for arranging nodes easier",
-    "blender": (2, 92, 0),
-    "version": (1, 0, 0),
+    "blender": (4, 4, 0),
+    "version": (1, 0, 1),
     "location": "Node Editor > Properties > Node Relax. Shortcut: Shift R",
     "category": "Node",
 }
