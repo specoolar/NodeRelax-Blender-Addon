@@ -37,18 +37,7 @@ class NodeRelaxBrush(bpy.types.Operator):
     bl_idname = "node_relax.brush"
     bl_label = "Relax Nodes"
 
-    bl_options = {"UNDO", "REGISTER"}
-
-    def __init__(self):
-        self.radius = 100
-        self.lmb = False
-        self.delta = mathutils.Vector((0, 0))
-        self.cursor_pos = mathutils.Vector((0, 0))
-        self.cursor_prev_pos = mathutils.Vector((0, 0))
-        self.slide_vec = mathutils.Vector((0, 0))
-        self. drag_mode = False
-        self.is_dragging = False
-        self.dragging_node = None
+    #bl_options = {"UNDO", "REGISTER"}
 
     @classmethod
     def poll(cls, context):
@@ -120,8 +109,8 @@ class NodeRelaxBrush(bpy.types.Operator):
                 nearest = dist
 
     def finish(self, context, props):
-        st = bpy.types.SpaceNodeEditor
-        st.draw_handler_remove(self.draw_handler, 'WINDOW')
+        bpy.types.SpaceNodeEditor.draw_handler_remove(
+            self.draw_handler, 'WINDOW')
         props.IsRunning = False
 
     def modal(self, context, event):
@@ -133,7 +122,7 @@ class NodeRelaxBrush(bpy.types.Operator):
         if event.type == 'LEFT_SHIFT' or event.type == 'RIGHT_SHIFT': # drag individual node
             if event.value == 'PRESS':
                 self.drag_mode = True
-            if event.value == 'RELEASE':
+            elif  event.value == 'RELEASE':
                 self.drag_mode = False
             self.is_dragging = False
             self.update_dragging_node(self.tree.nodes)
@@ -187,12 +176,24 @@ class NodeRelaxBrush(bpy.types.Operator):
         if props.IsRunning:
             return {'CANCELLED'}
 
+        self.some_state = None
+        self.radius = 100
+        self.lmb = False
+        self.delta = mathutils.Vector((0, 0))
+        self.cursor_pos = mathutils.Vector((0, 0))
+        self.cursor_prev_pos = mathutils.Vector((0, 0))
+        self.slide_vec = mathutils.Vector((0, 0))
+        self.drag_mode = False
+        self.is_dragging = False
+        self.dragging_node = None
+        
+
         self.tree = context.space_data.edit_tree
         context.window_manager.modal_handler_add(self)
-        st = bpy.types.SpaceNodeEditor
-        self.draw_handler = st.draw_handler_add(draw_callback, (self,), 'WINDOW', 'POST_VIEW')
+        self.draw_handler = bpy.types.SpaceNodeEditor.draw_handler_add(
+            draw_callback, (self,), 'WINDOW', 'POST_VIEW'
+        )
 
-        self.lmb = False
         props.IsRunning = True
         self.update_cursor_pos(context, event)
         self.update_radius(context, props.BrushSize)
